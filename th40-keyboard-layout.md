@@ -395,15 +395,25 @@ The fork includes `VIA_Mapping_TH40.json` - after flashing QMK, you can still us
 - Wireless behavior might differ slightly (sleep times, battery consumption)
 
 ### TODO
-- [ ] Install QMK CLI
-- [ ] Clone carlosedp fork
-- [ ] Create ivan keymap based on current VIA layout
-- [ ] Add Colemak layer with Enter→O
+- [x] Install QMK CLI
+- [x] Clone carlosedp fork
+- [x] Create zip753 keymap based on current VIA layout
+- [x] Add Colemak layer with Enter→O
 - [ ] Add DEL_WORD_FWD macro (Option+Right then Option+Backspace) for consistent word-forward delete
-- [ ] Test compile
-- [ ] Backup original firmware
-- [ ] Flash and test
+- [x] Test compile
+- [ ] Backup original firmware (download from Epomaker site)
+- [x] Flash and test
 - [ ] Iterate on layout
+- [ ] Investigate USB mode not working (keys unresponsive in wired mode)
+- [ ] Fix KC_A on left Ctrl position (layer 0) - VIA export artifact?
+
+### QMK Status (2025-01-04)
+- **Flashed**: carlosedp QMK fork, keymap `zip753`
+- **Working**: Bluetooth (all 3 channels), RGB, battery indicator, Mac/Win toggle, Colemak layer
+- **Broken**: USB wired mode - keys unresponsive, only BT works even with switch set to USB
+- **Flashing method**: Hold Esc + plug in USB → mounts as "NO NAME" drive → copy .bin file
+- **Repo**: `github.com/Zip753/keebs` with symlink `qmk_firmware/keyboards/epomaker/th40/keymaps/zip753` → `th40/default/`
+- **Compile**: `qmk compile -kb epomaker/th40 -km zip753`
 
 ---
 
