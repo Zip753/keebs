@@ -1,5 +1,19 @@
 # EPOMAKER TH40 Keyboard Layout
 
+## Quick Reference (for new context)
+
+```
+Repo:     github.com/Zip753/keebs
+Keymap:   th40/default/keymap.c (symlinked as zip753 in qmk_firmware)
+Compile:  cd qmk_firmware && qmk compile -kb epomaker/th40 -km zip753
+Flash:    Hold Esc + plug USB → copy .bin to "NO NAME" drive
+Status:   BT works, USB broken (needs investigation)
+```
+
+**Workflow:** Edit keymap.c → compile → flash. When USB fixed: test in VIA first → sync to keymap.c.
+
+---
+
 ## Physical Layout Reference
 
 ```
