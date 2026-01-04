@@ -10,6 +10,12 @@
 
 ## Maintenance
 - [ ] Backup original firmware (download from Epomaker site)
+- [ ] Set up keymap-drawer for SVG visualization
+  - `pip install keymap-drawer`
+  - `qmk c2json -kb epomaker/th40 -km zip753 -o keymap.json`
+  - `keymap parse -q keymap.json > keymap.yaml`
+  - `keymap draw keymap.yaml > keymap.svg`
+  - No layer limit unlike VIA, good for 5+ layer setups
 
 ## Known Issues & Workarounds
 

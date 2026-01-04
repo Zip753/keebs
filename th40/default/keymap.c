@@ -4,7 +4,9 @@
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     // Layer 0: QWERTY base (Mac)
-    // Note: Bottom row has ZXCV shift - slash is between B and N
+    // - ZXCV shift: slash moved between B and N (see DECISIONS.md)
+    // - KC_A on bottom-left: testing caps lock behavior (TODO: fix)
+    // - DF(3): switch to Colemak layer
     [0] = LAYOUT_tkl_ansi(
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
         KC_LCTL, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,             KC_ENT,
@@ -13,6 +15,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     // Layer 1: Symbols (hold left space)
+    // - S(KC_*): shifted symbols (! @ # $ % ^ & *)
+    // - KC_NUBS: backtick ` (ISO workaround for UK layout)
+    // - S(KC_NUBS): tilde ~ (ISO workaround)
+    // - S(KC_SCLN): colon : on backspace position
+    // - KC_SCLN: semicolon ; on V position
+    // - MW_CH: Mac/Windows toggle
     [1] = LAYOUT_tkl_ansi(
         KC_TAB,  S(KC_1), S(KC_2), S(KC_3), S(KC_4), S(KC_5), S(KC_6), S(KC_7), S(KC_8), KC_NUBS, S(KC_NUBS), S(KC_SCLN),
         KC_LCTL, KC_LBRC, KC_RBRC, S(KC_BSLS), S(KC_MINS), KC_NO, S(KC_EQL), KC_EQL, S(KC_9), S(KC_0),       KC_QUOT,
@@ -21,6 +29,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     // Layer 2: Numbers + Navigation + System
+    // - Arrows: HJKL vim-style
+    // - Word nav: LALT(KC_LEFT/RGHT) = word backward/forward
+    // - Word del: LALT(KC_BSPC/DEL) = delete word backward/forward
+    // - MD_BLE1/2/3: Bluetooth channels, MD_24G: 2.4GHz mode
+    // - QK_BAT: battery check, EE_CLR: clear EEPROM, RM_TOGG: RGB toggle
     [2] = LAYOUT_tkl_ansi(
         KC_ESC,  KC_P1,   KC_P2,   KC_P3,   KC_P4,   KC_P5,   KC_P6,   KC_P7,   KC_P8,   KC_P9,   KC_P0,   KC_NO,
         KC_LCTL, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  KC_NO,   KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT,          RM_TOGG,
@@ -29,7 +42,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     // Layer 3: Colemak-DH base
-    // Enter position = O (use layer 2 for actual Enter)
+    // - KC_O on Enter position: TH40 missing semicolon key = missing O in Colemak
+    // - KC_ENT on left space: workaround for broken MO() layers with DF(3)
+    // - DF(0): switch back to QWERTY
     [3] = LAYOUT_tkl_ansi(
         KC_TAB,  KC_Q,    KC_W,    KC_F,    KC_P,    KC_B,    KC_J,    KC_L,    KC_U,    KC_Y,    KC_SCLN, KC_BSPC,
         KC_LCTL, KC_A,    KC_R,    KC_S,    KC_T,    KC_G,    KC_M,    KC_N,    KC_E,    KC_I,             KC_O,
