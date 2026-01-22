@@ -7,6 +7,11 @@
 - [ ] Iterate on layout
 - [ ] Add DEL_WORD_FWD macro (Option+Right then Option+Backspace) for consistent word-forward delete
 - [ ] Fix KC_A on left Ctrl position (layer 0) - VIA export artifact?
+- [ ] Move Colemak switch to Layer 1 right Ctrl (LSpace + RCtrl)
+  - Currently DF(3) on Layer 0 right Ctrl
+  - Once Colemak layer triggering is fixed (DF(3) breaks MO()), make it a toggle:
+  - Custom keycode `DF_TOG` in `process_record_user` to toggle between DF(0) and DF(3)
+  - Uses `get_highest_layer(default_layer_state)` to check current, `set_single_persistent_default_layer()` to switch
 
 ## Maintenance
 - [ ] Backup original firmware (download from Epomaker site)
