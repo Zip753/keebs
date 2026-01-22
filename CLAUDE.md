@@ -24,17 +24,11 @@ Use this format for visualizing TH40 layers. Top line shows key sizes, bottom sh
 │ Caps │ A │ S │ D │ F │ G │ H │ J │ K │ L │ Enter  │
 ├────┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬──────┤
 │1.25│1u │1u │1u │1u │1u │1u │1u │1u │1u │1u │1.75u │  Row 3
-│Shft│/?*│ Z │ X │ C │ V │ B │ N │ M │ , │ . │Shift │
+│Shft│ Z │ X │ C │ V │ B │/? │ N │ M │ , │ . │Shift │
 ├────┬───┬────┬────────┬───┬──────────┬────┬───┬────┤
 │1.25│1u │1.25│ 2.25u  │1u │  2.75u   │1.25│1u │1.25│  Row 4
 │Ctrl│Opt│ Cmd│ LSpace │Fn │  RSpace  │ Cmd│Opt│Ctrl│
 └────┴───┴────┴────────┴───┴──────────┴────┴───┴────┘
-
-* Note: /? is next to left shift (TH40 quirk)
 ```
 
-## Key Naming Convention
-
-When referencing keys, use the **shifted ZXCV layout** (what's on the keycaps), not original QWERTY positions:
-- Row 3 keycaps read: Shift, Z, X, C, V, B, /, N, M, etc.
-- The / keycap is physically between B and N (moved from the TH40 quirk position)
+Row 3 uses ZXCV-shifted layout: /? keycap moved between B and N (from TH40's quirk position next to left shift).

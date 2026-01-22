@@ -61,6 +61,13 @@
 - **Fix**: Use `KC_NUBS` for backtick, `S(KC_NUBS)` for tilde
 - Works correctly with UK ISO input source
 
+### Momentary LED Indicators Persist
+- BT channel indicator (MD_BLE1/2/3), battery indicator (QK_BAT), etc. stay lit after releasing layer 2
+- Only clears when background LED animation overwrites them
+- If animation is slow/static, indicators linger noticeably
+- Battery indicator especially persistent
+- Likely needs explicit LED clear on layer release (custom code)
+
 ## Future Considerations
 
 ### Colemak Support (BLOCKED in VIA - Use QMK)
