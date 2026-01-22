@@ -34,10 +34,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // - Word del: LALT(KC_BSPC/DEL) = delete word backward/forward
     // - MD_BLE1/2/3: Bluetooth channels, MD_24G: 2.4GHz mode
     // - QK_BAT: battery check, EE_CLR: clear EEPROM, RM_TOGG: RGB toggle
+    // - RGB: RM_VALD/VALU = brightness down/up, RM_NEXT = next animation
     [2] = LAYOUT_tkl_ansi(
         KC_ESC,  KC_P1,   KC_P2,   KC_P3,   KC_P4,   KC_P5,   KC_P6,   KC_P7,   KC_P8,   KC_P9,   KC_P0,   KC_NO,
         KC_LCTL, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  KC_NO,   KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT,          RM_TOGG,
-        KC_LSFT, KC_MUTE, KC_VOLD, KC_VOLU, KC_NO,   KC_NO,   KC_NO,   LALT(KC_LEFT), LALT(KC_BSPC), LALT(KC_DEL), LALT(KC_RGHT), MW_CH,
+        KC_LSFT, KC_MUTE, KC_VOLD, KC_VOLU, RM_VALD, RM_VALU, RM_NEXT, LALT(KC_LEFT), LALT(KC_BSPC), LALT(KC_DEL), LALT(KC_RGHT), MW_CH,
         EE_CLR,  QK_WLO,  KC_LALT,                   QK_BAT,  KC_NO,   KC_SPC,           KC_RGUI, KC_RALT, KC_NO
     ),
 

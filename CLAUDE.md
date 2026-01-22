@@ -32,3 +32,9 @@ Use this format for visualizing TH40 layers. Top line shows key sizes, bottom sh
 
 * Note: /? is next to left shift (TH40 quirk)
 ```
+
+## Key Naming Convention
+
+When referencing keys, use the **shifted ZXCV layout** (what's on the keycaps), not original QWERTY positions:
+- Row 3 keycaps read: Shift, Z, X, C, V, B, /, N, M, etc.
+- The / keycap is physically between B and N (moved from the TH40 quirk position)
