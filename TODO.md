@@ -7,11 +7,10 @@
 - [ ] Iterate on layout
 - [ ] Add DEL_WORD_FWD macro (Option+Right then Option+Backspace) for consistent word-forward delete
 - [ ] Fix KC_A on left Ctrl position (layer 0) - VIA export artifact?
-- [ ] Move Colemak switch to Layer 1 right Ctrl (LSpace + RCtrl)
-  - Currently DF(3) on Layer 0 right Ctrl
-  - Once Colemak layer triggering is fixed (DF(3) breaks MO()), make it a toggle:
-  - Custom keycode `DF_TOG` in `process_record_user` to toggle between DF(0) and DF(3)
-  - Uses `get_highest_layer(default_layer_state)` to check current, `set_single_persistent_default_layer()` to switch
+- [x] Move Colemak to Layer 1 (rearranged layer order)
+  - Layers now: 0=QWERTY, 1=Colemak, 2=Symbols, 3=Numbers
+  - Toggle: DF(1) on layer 0, DF(0) on layer 1
+  - Future: Custom `DF_TOG` keycode for single-key toggle
 
 ## Maintenance
 - [ ] Backup original firmware (download from Epomaker site)
@@ -24,20 +23,11 @@
 
 ## Known Issues & Workarounds
 
-### DF(3) Breaks MO() Layers - BLOCKING COLEMAK
-- Setting DF(3) for Colemak base layer works (alphas are Colemak)
-- BUT MO(1) and MO(2) completely stop working
-- No symbols, no numbers, nothing - layers don't activate at all
-- This is likely an Epomaker firmware bug
-- **Cannot use OS-level Colemak** because TH40 is missing the semicolon/O position
-- Need Enter → O remap which requires keyboard-level Colemak
-- **Fix requires**: Custom QMK firmware, not VIA
-
-### Layer Default Problem
-- Mac/Windows toggle (MW_CH) sets default layer via DF()
-- Keyboard remembers this in EEPROM
-- Moved MW_CH to accessible spot so can recover if boots to wrong layer
-- Use Fn + Right Shift to toggle back to correct mode
+### DF() + MO() Layer Issue (RESOLVED)
+- Was: DF(3) for Colemak broke MO(1)/MO(2) - layers didn't activate
+- Root cause: QMK layers must be in increasing order (higher layers override lower)
+- Fix: Reordered layers so base layouts (0, 1) are below overlays (2, 3)
+- MW_CH also removed - it hijacked layer 1 for Mac/Win mode we don't need
 
 ### VIA Save Not Working
 - Corporate laptop security blocks file downloads
@@ -48,7 +38,7 @@
 - TODO: Try exporting from personal PC
 
 ### Apostrophe Mid-Word
-- `'` is on Layer 1 Enter - requires layer switch mid-word for contractions
+- `'` is on Layer 2 Enter - requires layer switch mid-word for contractions
 - Acceptable tradeoff for now
 - Alternative considered: put `'` on Right Alt key (tap)
 
@@ -67,7 +57,7 @@
 - Works correctly with UK ISO input source
 
 ### Momentary LED Indicators Persist
-- BT channel indicator (MD_BLE1/2/3), battery indicator (QK_BAT), etc. stay lit after releasing layer 2
+- BT channel indicator (MD_BLE1/2/3), battery indicator (QK_BAT), etc. stay lit after releasing layer 3
 - Only clears when background LED animation overwrites them
 - If animation is slow/static, indicators linger noticeably
 - Battery indicator especially persistent
@@ -75,12 +65,11 @@
 
 ## Future Considerations
 
-### Colemak Support (BLOCKED in VIA - Use QMK)
-- VIA only supports 4 layers (0-3)
-- DF(3) for Colemak breaks MO(1)/MO(2) - Epomaker firmware bug
-- Problem: TH40 missing semicolon position = missing O in Colemak
-- Solution: Remap Enter to O, move Enter to layer or elsewhere
-- **Fix**: Use carlosedp's QMK fork
+### Colemak Support (READY)
+- Layer order: 0=QWERTY, 1=Colemak, 2=Symbols, 3=Numbers
+- DF(1)/DF(0) toggle on right Ctrl position
+- TH40 missing semicolon position = Enter remapped to O in Colemak
+- Needs testing after flashing
 
 ### Home Row Mods (Later)
 - Tap = letter, Hold = modifier

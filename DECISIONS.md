@@ -58,12 +58,23 @@ This puts /? under left index finger (comfortable stretch position).
 - Right Shift
 - Right bottom row keys
 
+### Layer Order
+
+Layers are ordered with base layouts first, then overlays:
+- Layer 0: QWERTY base
+- Layer 1: Colemak-DH base
+- Layer 2: Symbols
+- Layer 3: Numbers + Navigation + System
+
+This follows QMK's recommendation that higher layers take precedence,
+so overlay layers (Symbols, Numbers) should be above base layers.
+
 ### Layer Access
-- Left Space = MO(1) Symbols (left thumb)
-- Middle Fn = MO(2) Numbers (left thumb or right index)
+- Left Space = MO(2) Symbols (left thumb)
+- Middle Fn = MO(3) Numbers (left thumb or right index)
 - Right Ctrl = QWERTY/Colemak toggle (not momentary):
-  - On Layer 0: DF(3) → switch to Colemak
-  - On Layer 3: DF(0) → switch back to QWERTY
+  - On Layer 0: DF(1) → switch to Colemak
+  - On Layer 1: DF(0) → switch back to QWERTY
 
 ### Removed: MW_CH (Mac/Windows Toggle)
 
@@ -73,8 +84,8 @@ The firmware's MW_CH key was designed for stock keymaps where:
 
 What MW_CH actually does: `layer_on(1)` for Mac mode, `layer_off(1)` for Windows.
 
-**Problem:** Our keymap uses Layer 1 for Symbols, not Mac modifiers. Pressing MW_CH
-would permanently enable the Symbols layer, causing a confusing "stuck" state.
+**Problem:** Our keymap uses Layer 1 for Colemak, not Mac modifiers. Pressing MW_CH
+would permanently enable the Colemak layer, causing a confusing "stuck" state.
 
 **Why we don't need it:**
 - Layer 0 already has Mac-correct modifier positions (Cmd where Cmd should be)
