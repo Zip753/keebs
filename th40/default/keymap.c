@@ -20,12 +20,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // - S(KC_NUBS): tilde ~ (ISO workaround)
     // - S(KC_SCLN): colon : on backspace position
     // - KC_SCLN: semicolon ; on V position
-    // - MW_CH: Mac/Windows toggle
     [1] = LAYOUT_tkl_ansi(
         KC_TAB,  S(KC_1), S(KC_2), S(KC_3), S(KC_4), S(KC_5), S(KC_6), S(KC_7), S(KC_8), KC_NUBS, S(KC_NUBS), S(KC_SCLN),
         KC_LCTL, KC_LBRC, KC_RBRC, S(KC_BSLS), S(KC_MINS), KC_NO, S(KC_EQL), KC_EQL, S(KC_9), S(KC_0),       KC_QUOT,
         KC_LSFT, KC_NO,   KC_NO,   KC_NO,   KC_SCLN, KC_NO,   KC_NO,   KC_BSLS, KC_MINS, S(KC_LBRC), S(KC_RBRC), KC_RSFT,
-        KC_NO,   KC_LALT, KC_LGUI,                   KC_NO,   KC_NO,   KC_SPC,           KC_RGUI, KC_APP,  MW_CH
+        KC_NO,   KC_LALT, KC_LGUI,                   KC_NO,   KC_NO,   KC_SPC,           KC_RGUI, KC_RALT, KC_RCTL
     ),
 
     // Layer 2: Numbers + Navigation + System
@@ -38,7 +37,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [2] = LAYOUT_tkl_ansi(
         KC_ESC,  KC_P1,   KC_P2,   KC_P3,   KC_P4,   KC_P5,   KC_P6,   KC_P7,   KC_P8,   KC_P9,   KC_P0,   KC_NO,
         KC_LCTL, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  KC_NO,   KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT,          RM_TOGG,
-        KC_LSFT, KC_MUTE, KC_VOLD, KC_VOLU, RM_VALD, RM_VALU, RM_NEXT, LALT(KC_LEFT), LALT(KC_BSPC), LALT(KC_DEL), LALT(KC_RGHT), MW_CH,
+        KC_LSFT, KC_MUTE, KC_VOLD, KC_VOLU, RM_VALD, RM_VALU, RM_NEXT, LALT(KC_LEFT), LALT(KC_BSPC), LALT(KC_DEL), LALT(KC_RGHT), KC_RSFT,
         EE_CLR,  QK_WLO,  KC_LALT,                   QK_BAT,  KC_NO,   KC_SPC,           KC_RGUI, KC_RALT, KC_NO
     ),
 

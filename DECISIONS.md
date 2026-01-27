@@ -63,9 +63,23 @@ This puts /? under left index finger (comfortable stretch position).
 - Middle Fn = MO(2) Numbers (left thumb or right index)
 - Right Ctrl = QWERTY/Colemak toggle (not momentary):
   - On Layer 0: DF(3) → switch to Colemak
-  - On Layer 1: MW_CH → Mac/Windows toggle (escape from Mac mode)
-  - On Layer 2: (transparent)
   - On Layer 3: DF(0) → switch back to QWERTY
+
+### Removed: MW_CH (Mac/Windows Toggle)
+
+The firmware's MW_CH key was designed for stock keymaps where:
+- Layer 0 = Windows layout (Alt/Win in Windows positions)
+- Layer 1 = Mac overlay (swaps Alt/GUI for Mac)
+
+What MW_CH actually does: `layer_on(1)` for Mac mode, `layer_off(1)` for Windows.
+
+**Problem:** Our keymap uses Layer 1 for Symbols, not Mac modifiers. Pressing MW_CH
+would permanently enable the Symbols layer, causing a confusing "stuck" state.
+
+**Why we don't need it:**
+- Layer 0 already has Mac-correct modifier positions (Cmd where Cmd should be)
+- No Windows-specific layout exists or is needed
+- Mac-only user, Windows use is rare enough to not warrant a toggle
 
 ### Why Right-Hand Heavy Symbols
 - Left hand is modifier-heavy (Ctrl+Space for tmux, etc.)
