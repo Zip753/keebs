@@ -16,13 +16,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     // Layer 1: Colemak-DH base
     // - KC_O on Enter position: TH40 missing semicolon key = missing O in Colemak
-    // - KC_ENT on left space: workaround for broken MO() layers with DF()
+    // - Enter: LSpace + RSpace (layer 2 right space)
     // - DF(0): switch back to QWERTY
     [1] = LAYOUT_tkl_ansi(
         KC_TAB,  KC_Q,    KC_W,    KC_F,    KC_P,    KC_B,    KC_J,    KC_L,    KC_U,    KC_Y,    KC_SCLN, KC_BSPC,
         KC_LCTL, KC_A,    KC_R,    KC_S,    KC_T,    KC_G,    KC_M,    KC_N,    KC_E,    KC_I,             KC_O,
         KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_D,    KC_V,    KC_SLSH, KC_K,    KC_H,    KC_COMM, KC_DOT,  KC_RSFT,
-        KC_CAPS, KC_LALT, KC_LGUI,                   KC_ENT,  MO(3),   KC_SPC,           KC_RGUI, KC_RALT, DF(0)
+        KC_CAPS, KC_LALT, KC_LGUI,                   MO(2),   MO(3),   KC_SPC,           KC_RGUI, KC_RALT, DF(0)
     ),
 
     // Layer 2: Symbols (hold left space)
@@ -31,11 +31,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // - S(KC_NUBS): tilde ~ (ISO workaround)
     // - S(KC_SCLN): colon : on backspace position
     // - KC_SCLN: semicolon ; on V position
+    // - KC_ENT on right space: Enter for Colemak (LSpace + RSpace)
     [2] = LAYOUT_tkl_ansi(
         KC_TAB,  S(KC_1), S(KC_2), S(KC_3), S(KC_4), S(KC_5), S(KC_6), S(KC_7), S(KC_8), KC_NUBS, S(KC_NUBS), S(KC_SCLN),
         KC_LCTL, KC_LBRC, KC_RBRC, S(KC_BSLS), S(KC_MINS), KC_NO, S(KC_EQL), KC_EQL, S(KC_9), S(KC_0),       KC_QUOT,
         KC_LSFT, KC_NO,   KC_NO,   KC_NO,   KC_SCLN, KC_NO,   KC_NO,   KC_BSLS, KC_MINS, S(KC_LBRC), S(KC_RBRC), KC_RSFT,
-        KC_NO,   KC_LALT, KC_LGUI,                   KC_NO,   KC_NO,   KC_SPC,           KC_RGUI, KC_RALT, KC_RCTL
+        KC_NO,   KC_LALT, KC_LGUI,                   KC_NO,   KC_NO,   KC_ENT,           KC_RGUI, KC_RALT, KC_RCTL
     ),
 
     // Layer 3: Numbers + Navigation + System
