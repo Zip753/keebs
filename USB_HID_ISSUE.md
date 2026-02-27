@@ -574,8 +574,17 @@ ioreg -p IOUSB -l | head -100
 | Fix Attempt 5 | 582eb... | +EP0 hw regs in usb_lld_init_endpoint | FAILED - wrong place (called after enum) |
 | Fix Attempt 6 | d2065... | +EP0 hw regs in usb_lld_start | FAILED - test used mode-switch path, not boot |
 | Fix Attempt 7 | 4c256... | +EP0 hw regs (TXMAXP/RXMAXP) in both paths | FAILED - wrong registers for EP0? |
+| Debug 8 | 68ef0... | LED debug (boot path) | ✅ Boot path runs, code executes |
+| Debug 9 | c89f4... | LED debug (ISR + EP0 ints) | ✅ All interrupts fire on Mac! |
+| Fix 10 | 1580b... | EP0 FIFO address config (TXFIFO1/2, RXFIFO1/2) | FAILED - same wMaxPacketSize 0x0000 |
+| Debug 11 | 11df1... | LED trace handle_ep0() + usbd_write_packet() | RED = SETUP OK, write path failed |
+| Debug 12 | 83cab... | +trace usbd_ep_start_write() early returns | YELLOW = EP enabled, but early return before write |
+| Fix 13 | a277e... | EP0 HW reconfig in USB RESET handler | FAILED - wrong hypothesis |
+| Debug 14 | 030df... | Track early return path in usbd_ep_start_write | GREEN = data_len==0 (ZLP path) |
 
-**Current flashed firmware**: Fix Attempt 7 (4c25615af37ccc707f06303727e6f72f6505b30a2c22dbddfed7a1983f746e37)
+**Current flashed firmware**: Debug 14 (030df582a0aa2794a6b4aa9f6f272519f990589b2d05f87e2f45ede890d0d4b5)
+
+**Retrospective**: Fix attempts 4-7, 10, 13 were speculative register changes without understanding root cause. Debug 8-9, 11-12, 14 were useful for narrowing down. Next investigation should trace ChibiOS layer.
 
 ## Fix Attempt 4 (2026-01-28): Call usb_lld_reset() in es_restart_usb_driver()
 
@@ -708,9 +717,194 @@ Added EP0 hardware register writes to:
 
 These changes are committed as ongoing investigation - they don't fix the issue but represent the debugging direction.
 
-## Next Steps
+## Debug 8 Results: LED Instrumentation (2026-01-28)
 
-1. **Try indicator LED debugging** - verify code paths are executing
-2. **Investigate iPhone vs Mac difference** - why does iPhone USB work?
-3. **Check device descriptor** - maybe bMaxPacketSize0 is hardcoded wrong somewhere
-4. **Consider upstream** - check if carlosedp repo has any related issues/discussions
+**Firmware**: SHA256 `68ef0be4...`
+
+**Test A (boot path, toggle=USB)**:
+- Caps Lock LED = WHITE (all 3 flags set)
+- Meaning: `usb_lld_start()` entered, `state==USB_STOP` true, EP0 regs written
+- **Conclusion: Boot path fully executes**
+
+**Test B (mode-switch path, toggle=BLE then plug USB)**:
+- Win Lock LED = GREEN immediately on USB plug (before pressing mode key)
+- Meaning: `es_restart_usb_driver()` auto-called on hot-plug, completed fully
+- **Conclusion: Mode-switch path executes on USB detect**
+
+**Key finding**: Code IS running. EP0 register writes ARE happening. USB still fails.
+
+**Device descriptor check**: `bMaxPacketSize0 = 64` is correctly defined in
+`tmk_core/protocol/chibios/chibios.mk:18` as `FIXED_CONTROL_ENDPOINT_SIZE=64`.
+
+**Why Mac still reports `wMaxPacketSize 0x0000`**: The control transfer fails BEFORE
+descriptor is read. Mac logs show `0 bytes transferred` - the USB controller isn't
+responding to EP0 control requests at all. The 64-byte descriptor value never gets sent.
+
+**Root cause narrowed**: TXMAXP/RXMAXP registers are NOT what controls EP0 response.
+Something else is missing in the USB peripheral initialization.
+
+## Investigation Progress (2026-01-28)
+
+### What We've Proven
+- ✅ Boot path executes (Debug 8 - WHITE Caps Lock)
+- ✅ USB interrupts fire: ISR, RESET, EP0 TX, EP0 RX (Debug 9 - WHITE Connection LED)
+- ✅ Device descriptor has correct bMaxPacketSize0=64
+- ✅ Code paths execute on both boot and mode-switch
+
+### What We've Tried (All Failed)
+- Fix 4: `usb_lld_reset()` call
+- Fix 5: EP0 hw regs in `usb_lld_init_endpoint()`
+- Fix 6: EP0 hw regs in `usb_lld_start()`
+- Fix 7: EP0 TXMAXP/RXMAXP in both paths
+- Fix 10: EP0 FIFO address config (TXFIFO1/2, RXFIFO1/2)
+
+### The Mystery
+**Interrupts fire, but Mac sees "0 bytes transferred".**
+
+EP0 TX interrupt fires → means firmware tries to send data → but host receives nothing.
+
+### Background Analysis Files
+- `USB_ANALYSIS_SUMMARY.md` - FIFO and Monsgeek comparison findings
+- `USB_MONSGEEK_COMPARISON.md` - (if created by agent)
+- `USB_MUSB_FIFO_ANALYSIS.md` - (if created by agent)
+
+### Unexplored Areas
+1. **`handle_ep0()` function** - actual control transfer processing
+2. **PHY initialization** - maybe USB PHY needs specific setup
+3. **Soft-connect timing** - Mac may be stricter about timing
+4. **Data actually written to FIFO?** - interrupts fire but is data in FIFO?
+5. **iPhone vs Mac USB stack differences** - why does iPhone work?
+
+## Reflection: Are We Making Progress?
+
+**Honest assessment**: The LED debugging (Debug 8-9) was valuable - it proved code executes and interrupts fire. This narrowed the problem from "code doesn't run" to "data doesn't transfer."
+
+**But**: Fix attempts 4-10 were somewhat trial-and-error register writes without deep understanding of the actual data transfer mechanism. We've been fixing the "setup" but not the "transfer."
+
+**Key insight we haven't acted on**: The problem is likely in `handle_ep0()` or the FIFO write mechanism, not in register initialization. Interrupts fire (proven), so the hardware is working - but something in the software response path is wrong.
+
+**iPhone works** - this is our biggest clue. Same firmware, different host. Either:
+- Mac is stricter about timing
+- Mac is stricter about data format
+- iPhone retries more tolerantly
+
+## Debugging Strategy (Locked In)
+
+**Approach**: LED-based tracing before any more fix attempts. LEDs proved valuable (Debug 8-9 gave actionable data). Register guessing did not.
+
+**What worked**:
+- LED flags in init path → proved code runs
+- LED flags in ISR → proved interrupts fire
+- Displaying flags via RGB matrix in main loop
+
+**Next debug target**: Trace `handle_ep0()` data path
+- Does it receive SETUP packet?
+- Does it identify GET_DESCRIPTOR request?
+- Does it call the descriptor send function?
+- Does it actually write bytes to FIFO?
+
+**Debug methodology**:
+1. Add sequential flags in `handle_ep0()` at key decision points
+2. Display on unused LED (Win Lock is free now)
+3. Test and observe which stages execute
+4. Narrow down where data flow breaks
+
+## Debug 11: handle_ep0() Data Flow Analysis
+
+### Code Analysis Summary (from Explore agent)
+
+**File**: `lib/chibios-contrib/os/hal/ports/ES32/LLD/USBv1/hal_usb_lld.c`
+
+**Key functions and lines**:
+| Function | Lines | Purpose |
+|----------|-------|---------|
+| `handle_ep0()` | 547-625 | Main EP0 state machine |
+| `usbd_ep_start_write()` | 444-508 | Initiates IN transfer |
+| `usbd_write_packet()` | 403-442 | Writes packet to FIFO |
+| `es_usbd_ep_write_packet_8bit()` | 218-225 | Actual byte-by-byte FIFO write |
+
+**Data flow chain**:
+```
+handle_ep0() line 578: _usb_ep0setup(&USBD1, 0)
+  → hal_usb.c default_handler() detects GET_DESCRIPTOR
+  → usbStartTransmitI() sets txbuf/txsize
+  → usb_lld_start_in() line 1213 calls usbd_ep_start_write()
+  → usbd_write_packet() line 435 calls es_usbd_ep_write_packet_8bit()
+  → FIFO byte writes, then line 438 sets TXRDY flag
+```
+
+**Potential issues identified**:
+1. **Timing race**: Line 438 sets TXRDY immediately after FIFO writes - Mac may sample before data latched
+2. **Silent failure**: Line 431-432 checks `usb_ep_in_data_avail()` - if returns 0, no bytes written but TXRDY still set
+3. **No flush**: No explicit FIFO flush between writes and TXRDY
+
+### Debug 11 Plan: LED Instrumentation
+
+Add flags at key points to trace exactly where data flow breaks:
+
+**Flag positions** (use Win Lock LED, RGB for multiple flags):
+| Flag | Color | Location | What it means |
+|------|-------|----------|---------------|
+| 1 | Red | handle_ep0() line 564 | SETUP packet RXRDY detected |
+| 2 | Green | handle_ep0() line 571 | SETUP packet read (8 bytes) |
+| 3 | Blue | handle_ep0() line 578 | _usb_ep0setup() called |
+| 4 | Yellow | usbd_write_packet() line 431 | usb_ep_in_data_avail() returned > 0 |
+| 5 | Cyan | usbd_write_packet() line 435 | es_usbd_ep_write_packet_8bit() called |
+| 6 | White | usbd_write_packet() line 438 | TXRDY flag set |
+
+**Expected result if working**: All flags 1-6 set (White LED)
+**If FIFO avail check fails**: Flags 1-3 only (Blue LED) - problem in usbd_write_packet
+**If SETUP never detected**: No flags - interrupt fires but RXRDY not set
+
+## Investigation Summary (2026-01-28, Session End)
+
+### Finding
+
+**`data_len == 0` when `usbd_ep_start_write()` is called for GET_DESCRIPTOR**
+
+The ZLP (Zero Length Packet) path is taken instead of sending descriptor data.
+
+### Debug Trail (LED colors observed)
+
+| Debug | Win Lock | Connection | Interpretation |
+|-------|----------|------------|----------------|
+| 11 | RED | - | SETUP OK, write path not entered |
+| 12 | YELLOW | - | EP enabled, but usbd_write_packet not called |
+| 14 | YELLOW | GREEN | data_len == 0, ZLP path taken |
+
+### What Was Useful
+
+- **LED-based debugging (Debug 11-14)** - Systematically narrowed from "USB broken" to specific failure point
+- **Tracing the call chain** - Identified exactly where data flow stops
+
+### What Was Running in Circles
+
+- **Fix 13 (RESET handler EP0 config)** - Based on Explore agent analysis that turned out to be wrong. RESET handler wasn't the problem.
+- **Earlier Fix attempts 4-10** - Trial-and-error register writes (TXMAXP, RXMAXP, TXFIFO, etc.) without understanding the actual failure
+- **"FIFO address not configured" hypothesis** - Red herring from code analysis
+
+### Open Question
+
+Is `data_len == 0` the root cause or a symptom? The ChibiOS USB code works on other keyboards. Why would `get_descriptor_cb()` return size 0 only here?
+
+Possibilities:
+1. Descriptor callback not properly configured for this keyboard
+2. ES32-specific issue in how ChibiOS parameters are passed to LLD
+3. Known bug in carlosedp's fork (issues/discussions disabled on repo)
+
+### Recommended Next Step
+
+**Trace the ChibiOS layer, not more ES32 LLD changes.**
+
+Add ONE debug flag in `hal_usb.c:default_handler()` to see what `get_descriptor_cb()` actually returns (pointer and size). This would confirm whether the issue is in descriptor config or in the LLD.
+
+### Files Modified (debugging artifacts)
+
+- `lib/chibios-contrib/os/hal/ports/ES32/LLD/USBv1/hal_usb_lld.c` - Debug flags, Fix 13 (ineffective)
+- `lib/rdmctmzt_common/keyboard_common.c` - LED display for debug flags
+
+Consider reverting these before any real fix attempt to reduce noise.
+
+### Workaround
+
+Bluetooth for typing, USB for power only. Works reliably.

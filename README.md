@@ -3,8 +3,8 @@
 ## Quick Reference
 
 ```
-Keymap:   th40/default/keymap.c (symlinked as zip753 in qmk_firmware)
-Compile:  qmk compile -kb epomaker/th40 -km zip753
+Keymap:   th40/default/keymap.c (symlinked as Zip753 in qmk_firmware)
+Compile:  qmk compile
 Flash:    Enter bootloader → copy .bin to "NO NAME" drive
 ```
 
@@ -21,11 +21,11 @@ keebs/
 │           └── th40/
 │               └── keymaps/
 │                   ├── default/     # Stock keymap from fork
-│                   └── zip753/      # Symlink → ../../../../../th40/default
+│                   └── Zip753/      # Symlink → ../../../../../th40/default
 └── README.md
 ```
 
-QMK expects keymaps at `keyboards/<vendor>/<model>/keymaps/<name>/`. We keep our source in `th40/default/` and symlink it into QMK as `zip753`.
+QMK expects keymaps at `keyboards/<vendor>/<model>/keymaps/<name>/`. We keep our source in `th40/default/` and symlink it into QMK as `Zip753`.
 
 ## Local Setup
 
@@ -40,17 +40,21 @@ git clone https://github.com/carlosedp/qmk_firmware.git
 qmk setup -H qmk_firmware
 
 # Symlink your keymap into the QMK tree
-ln -s ../../../../../th40/default qmk_firmware/keyboards/epomaker/th40/keymaps/zip753
+ln -s ../../../../../th40/default qmk_firmware/keyboards/epomaker/th40/keymaps/Zip753
+
+# Set default keyboard and keymap (so you can just run `qmk compile`)
+qmk config user.keyboard=epomaker/th40
+qmk config user.keymap=Zip753
 
 # Verify
-ls -la qmk_firmware/keyboards/epomaker/th40/keymaps/zip753
+ls -la qmk_firmware/keyboards/epomaker/th40/keymaps/Zip753
 ```
 
 ## Building
 
 ```bash
-qmk compile -kb epomaker/th40 -km zip753
-# Output: qmk_firmware/epomaker_th40_zip753.bin
+qmk compile
+# Output: qmk_firmware/epomaker_th40_Zip753.bin
 ```
 
 ## Flashing

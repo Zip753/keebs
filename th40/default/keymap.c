@@ -1,5 +1,6 @@
 #include QMK_KEYBOARD_H
 #include "rdmctmzt_common.h"
+#include "keyboard_common.h"
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -43,14 +44,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // - Arrows: HJKL vim-style
     // - Word nav: LALT(KC_LEFT/RGHT) = word backward/forward
     // - Word del: LALT(KC_BSPC/DEL) = delete word backward/forward
-    // - MD_BLE1/2/3: Bluetooth channels, MD_24G: 2.4GHz mode
+    // - MD_BLE1/2/3: Bluetooth channels, MD_24G: 2.4GHz mode, MD_USB: USB mode
     // - QK_BAT: battery check, EE_CLR: clear EEPROM, RM_TOGG: RGB toggle
     // - RGB: RM_VALD/VALU = brightness down/up, RM_NEXT = next animation
     [3] = LAYOUT_tkl_ansi(
         KC_ESC,  KC_P1,   KC_P2,   KC_P3,   KC_P4,   KC_P5,   KC_P6,   KC_P7,   KC_P8,   KC_P9,   KC_P0,   KC_NO,
-        KC_LCTL, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  KC_NO,   KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT,          RM_TOGG,
+        KC_LCTL, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  MD_USB,  KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT,          RM_TOGG,
         KC_LSFT, KC_MUTE, KC_VOLD, KC_VOLU, RM_VALD, RM_VALU, RM_NEXT, LALT(KC_LEFT), LALT(KC_BSPC), LALT(KC_DEL), LALT(KC_RGHT), KC_RSFT,
         EE_CLR,  QK_WLO,  KC_LALT,                   QK_BAT,  KC_NO,   KC_SPC,           KC_RGUI, KC_RALT, KC_NO
     ),
 
 };
+
+void keyboard_post_init_user(void) {
+    kb_keyboard_post_init();
+    rgb_matrix_mode_noeeprom(RGB_MATRIX_STARLIGHT_DUAL_HUE);
+}
