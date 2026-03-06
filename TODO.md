@@ -11,6 +11,10 @@
 - [ ] Iterate on layout
 - [ ] Add DEL_WORD_FWD macro (Option+Right then Option+Backspace) for consistent word-forward delete
 - [ ] Fix KC_A on left Ctrl position (layer 0) - VIA export artifact?
+- [ ] Try `LT(2, KC_CAPS_WORD)` on left space — tap for Caps Word, hold for layer 2
+  - `CAPS_WORD` auto-disables after one word, no manual toggle needed
+  - `TAPPING_TERM` (default 200ms) controls tap vs hold threshold
+  - Needs `CAPS_WORD_ENABLE = yes` in `rules.mk`
 - [x] Move Colemak to Layer 1 (rearranged layer order)
   - Layers now: 0=QWERTY, 1=Colemak, 2=Symbols, 3=Numbers
   - Toggle: DF(1) on layer 0, DF(0) on layer 1

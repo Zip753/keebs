@@ -40,6 +40,7 @@ A structured guide for learning embedded development through the EPOMAKER TH40 k
 - **Grounded in real code**: every concept cross-referenced with TH40 implementation
 - **Confidence levels per topic**: `[?]` unexplored → `[~]` surface understanding → `[✓]` solid grasp
 - **Sessions logged** at the bottom — what was covered, what clicked, what needs revisit
+- **Topic sections are the real notes** — after a session, the topic section is updated to reflect what was actually learned (progression, mental models, key insights). The session log stays as a lightweight timeline. Reading a topic section should be enough to rebuild understanding without replaying the conversation.
 
 ### What — Scope & Resources
 
@@ -62,31 +63,69 @@ A structured guide for learning embedded development through the EPOMAKER TH40 k
 
 **Constraints:** No time pressure — depth over breadth, follow curiosity.
 
+**Depth line for analog electronics:** Internalize pin modes (input/output, driving, reading), pull-ups/pull-downs, voltage/current/resistance at a practical level. Skip semiconductor physics (MOSFET internals, diode junctions) — not needed for QMK work. When a datasheet spec is unclear, ask "does this affect firmware behavior?" — if yes, look up the value; if no, move on.
+
 ---
 
 ## Part 2: Learning Path — "Life of a Keypress"
 
 The central narrative traces a keypress from physical switch to USB output. Each step branches into a deeper concept area. This gives a natural reading order while allowing arbitrary deep dives.
 
-### 1. Matrix Scanning `[?]`
+### 1. Matrix Scanning `[~]`
 
 *Physical switch → software event*
 
-How does pressing a physical key turn into a digital signal? The keyboard's switches are arranged in a matrix (rows × columns) to reduce the number of GPIO pins needed. The firmware scans this matrix continuously.
+#### Electronics Fundamentals
 
-**Key concepts:** GPIO pins, row/column scanning, debouncing, scan rate, ghosting/diodes
+**Voltage** is maintained by the power supply — 3.3V on VCC, 0V on GND. It exists whether or not current flows, like water level in a tower. **Current** flows when there's a path from high to low voltage; resistance limits how much (Ohm's law: I = V/R).
+
+**GPIO pins** have two modes:
+- **Output:** forces a voltage (HIGH = 3.3V, LOW = 0V) with very low impedance. "Driving" a pin.
+- **Input:** senses voltage via MOSFET gates. Draws essentially zero current — the gate is insulated, only the electric field matters. A voltage comparator inside reports HIGH or LOW.
+
+**Floating pin problem:** an input pin connected to nothing has no defined voltage. It picks up noise, reads random values, and puts internal transistors in a partial-conduction state that wastes power. **Pull-up/pull-down resistors** fix this by weakly connecting the pin to VCC or GND through a high-value resistor (~10kΩ–50kΩ), giving a default state that any external signal can easily overpower.
+
+**Mental model for pull-up with a button:**
+- Button open → pull-up holds pin at VCC → reads HIGH (default)
+- Button closed → pin connects to GND through switch → GND wins over weak resistor → reads LOW
+- Logic is inverted: pressed = LOW, released = HIGH
+
+#### The Matrix
+
+47 keys on 17 pins: **5 rows × 12 columns** (from `keyboard.json`). Row pins: B0, B3, B4, B5, B6. Column pins: D15, D14, C15, C14, C13, D3, D2, C12, C11, C10, A14, C9.
+
+**Diode direction: ROW2COL** — columns are outputs, rows are inputs with internal pull-ups.
+
+**Scan cycle** (runs ~1000–2000 times/sec in the main loop):
+1. Drive one column LOW, all others stay HIGH
+2. Read all 5 row pins — if a key connects that row to the LOW column, the row reads LOW (pressed)
+3. Drive column HIGH again, move to next column
+4. After all 12 columns: debounce the raw matrix → produce final `matrix[5]` array (12 bits per row)
+
+**Why diodes:** all keys in a column share one wire. When multiple keys are pressed, closed switches can create unintended paths between columns through shared row wires, causing ghost keypresses. Each diode (row→col direction) blocks reverse current flow, preventing this.
+
+**`MATRIX_UNSELECT_DRIVE_HIGH`:** when deselecting a column, actively drive it HIGH (near-zero impedance) instead of releasing to a passive pull-up. This charges parasitic capacitance fast, preventing ghost reads on the slow Cortex-M0.
+
+**Debounce: `asym_eager_defer_pk`** — press registers immediately (eager), release waits for stable signal (deferred), tracked per-key. Like a synth envelope with zero attack and longer release.
+
+#### The Main Loop
+
+No OS scheduler, no threads, no event loop. Just `while (true)` running everything sequentially:
+- `matrix_scan()` → `rgb_matrix_task()` → `mousekey_task()` → USB housekeeping → repeat
+- If matrix unchanged (most iterations): skip keypress processing entirely
+- RGB and other features have internal timers — called every loop but self-throttle
+- Only concurrency: ChibiOS handles USB interrupts underneath (hardware-driven, pauses main loop briefly)
 
 **Key files:**
 - `keyboards/epomaker/th40/keyboard.json` — matrix pin definitions
-- `quantum/matrix.c` — default matrix scanning implementation
+- `quantum/matrix.c` — default scanning (TH40 uses standard, no custom matrix)
 - `quantum/debounce/` — debounce algorithms
+- `quantum/main.c` — the `while(true)` loop
+- `quantum/keyboard.c` — `keyboard_task()` orchestrates scan + all feature tasks
 
-**TH40 cross-reference:** How many rows/columns? Custom matrix or default? Scan rate?
-
-**Understanding questions:**
-- [ ] Why arrange switches in a matrix instead of one pin per key?
-- [ ] What problem does debouncing solve? What happens without it?
-- [ ] How does the scan rate affect typing feel?
+**Still fuzzy:**
+- [ ] Diode physics (semiconductor junctions — not needed for QMK, noted for curiosity)
+- [ ] Exact scan timing and what `NOP_FUDGE 0.4` controls
 
 ---
 
@@ -94,66 +133,146 @@ How does pressing a physical key turn into a digital signal? The keyboard's swit
 
 *Which keycode, from which layer*
 
-Once a key position is identified, QMK determines which keycode to use based on the active layer stack. Layers are checked top-down; the first non-transparent keycode wins.
+#### Layer State: Two Bitmasks
 
-**Key concepts:** Layer stack, `KC_TRNS`, default layer vs active layers, `MO()`, `LT()`, `DF()`, basic vs quantum keycodes
+Layer state is tracked in two separate bitmasks, combined during lookup:
+- **`default_layer_state`** — which base layer is active. Set by `DF()`. Persists after key release. On TH40: `0b0001` (QWERTY) or `0b0010` (Colemak).
+- **`layer_state`** — momentary overlays. Set by `MO()`, `LT()`, etc. Cleared on release. E.g. holding left space: `0b0100` (layer 2).
+
+Active layers = `layer_state | default_layer_state`.
+
+#### Lookup: Highest Layer Wins, KC_TRNS Falls Through
+
+On keypress at `(row, col)`, QMK walks active layers **top to bottom**:
+1. Check highest active layer → read `keymaps[layer][row][col]`
+2. If `KC_TRNS` (transparent) → skip, check next layer down
+3. First non-transparent keycode wins
+4. If all layers transparent → falls back to layer 0. If that's also `KC_TRNS` → `ACTION_TRANSPARENT` → no-op (dead key).
+
+#### Layer Key Types
+
+- **`MO(n)`** — momentary. Sets bit in `layer_state` while held, clears on release. Our left space = `MO(2)`.
+- **`DF(n)`** — default layer. Changes `default_layer_state`. Persists — it's switching the base, not an overlay. Our QWERTY↔Colemak toggle.
+- **`LT(n, kc)`** — layer on hold, keycode on tap. `TAPPING_TERM` (default 200ms) decides: release within window = tap (sends `kc`), hold past window = layer (like `MO(n)`). We use `MO(2)` on left space but could use `LT(2, KC_CAPS_WORD)` for tap = caps word.
+- **`OSL(n)`** — one-shot layer. Tap to activate layer for the **next** keypress only, then deactivates.
+
+#### Source Layer Cache
+
+Per-key cache (`source_layers_cache[row][col]`) stores which layer a key resolved from at **press time**. On release, the cached layer is used instead of re-resolving.
+
+**Why:** If you hold MO(2), press a key (resolves on layer 2), then release MO(2) before releasing the key — without cache, the release would resolve on layer 0/1 and send the wrong keycode. Cache ensures press and release use the same layer.
+
+**Granularity:** One entry per physical key. Written on press, read on release, overwritten on next press. Never explicitly invalidated.
+
+#### TH40 Layer Stack
+
+```
+Layer 3: Numbers + Nav + System     ← MO(3) = hold Fn
+Layer 2: Symbols                    ← MO(2) = hold left space
+Layer 1: Colemak-DH base            ← DF(1)
+Layer 0: QWERTY base                ← DF(0)
+```
+
+Only 0 or 1 active as default at a time. 2 and 3 overlay on top when held. If both held simultaneously, layer 3 wins (higher bit) with fallthrough to 2 for transparent positions.
 
 **Key files:**
-- `quantum/action_layer.c` — layer state management
-- `quantum/keycode.h` — keycode definitions
-- `quantum/quantum_keycodes.h` — quantum keycode extensions
-- `th40/default/keymap.c` — our layer definitions
-
-**TH40 cross-reference:** 4 layers (QWERTY, Colemak, Symbols, Numbers+Nav). How does `DF()` toggle between base layers?
-
-**Understanding questions:**
-- [ ] What's the difference between `MO()` and `LT()`? When would you use each?
-- [ ] How does `KC_TRNS` affect the layer lookup? What if ALL layers are transparent for a position?
-- [ ] What happens when two momentary layers are active simultaneously?
+- `quantum/action_layer.c` — `layer_switch_get_layer()`: the top-down lookup loop
+- `quantum/keymap_common.c` — `action_for_key()` and `action_for_keycode()`: keycode → action conversion
+- `quantum/keymap_introspection.c` — `keycode_at_keymap_location()`: reads from `keymaps[]` in flash
+- `quantum/action.c` — `store_or_get_action()`: cache read/write, bridges matrix → layer → keycode
+- `th40/default/keymap.c` — our 4-layer keymap definition
 
 ---
 
-### 3. The Callback Chain `[~]`
+### 3. The Callback Chain `[✓]`
 
 *QMK's `_kb`/`_user` override pattern*
 
-QMK uses a layered callback system: core → keyboard (`_kb`) → keymap (`_user`). This allows each level to override or extend behavior without modifying the level above.
+#### Weak Functions
 
-**Key concepts:** Weak functions, `_kb` vs `_user` convention, `process_record` return values, initialization callbacks
+`__attribute__((weak))` is a GCC linker feature: "use this implementation unless someone provides a strong (normal) one with the same name." QMK uses this instead of function pointers because the target audience is hobbyists writing first C — just define a function with the right name and it works. Also allows normal compile-time optimizations that function pointers would prevent.
+
+#### The Three-Level Chain
+
+```
+QMK core calls _kb()  →  keyboard code (th40.c) calls _user()  →  keymap code (keymap.c)
+```
+
+No magic — each level **explicitly** calls the next. If `_kb` forgets to call `_user`, keymap code never runs. Convention, not framework enforcement.
+
+Each `bool` callback can return:
+- **`true`** — "I'm done, continue processing"
+- **`false`** — "I consumed this, stop" (swallows the keypress)
+
+Pattern in `_kb`: `if (!do_kb_stuff(...)) return false; return process_record_user(keycode, record);`
+
+#### Callback Pairs (~15 total)
+
+All follow the same `_kb` → `_user` pattern:
+- **Init:** `keyboard_pre_init`, `keyboard_post_init`
+- **Keypress:** `pre_process_record`, `process_record`, `post_process_record`
+- **Layer:** `layer_state_set`, `default_layer_state_set`
+- **LED/RGB:** `led_update`, `rgb_matrix_indicators`, `rgb_matrix_indicators_advanced`
+- **Housekeeping:** `housekeeping_task`
+- **Other:** `shutdown`, `encoder_update`, `connection_host_changed`
+
+#### TH40 Bug (Fixed Locally)
+
+`th40.c` shipped with `_user` callbacks where `_kb` should be — blocking keymap-level overrides. Our fix: rename to `_kb`, add explicit `_user()` calls inside. Same fix applied to Geonixr2 in commit `ece72520fa`.
 
 **Key files:**
-- `quantum/quantum.c` — core callback dispatch
-- `keyboards/epomaker/th40/th40.c` — keyboard-level callbacks (has the `_user`→`_kb` bug)
-- `th40/default/keymap.c` — our keymap-level callbacks
-
-**TH40 cross-reference:** The TH40 firmware ships with `_user` callbacks in `th40.c` where `_kb` should be, blocking keymap-level overrides. We've fixed this locally. See `TODO.md` → "Local qmk_firmware Edits".
-
-**Understanding questions:**
-- [ ] Why does QMK use `__attribute__((weak))` functions?
-- [ ] What happens if `process_record_kb` returns `false`?
-- [ ] What's the full list of callbacks QMK exposes? (init, matrix scan, layer change, etc.)
+- `quantum/quantum.c` — weak default `_kb`/`_user` declarations
+- `quantum/action.c` — `process_record()` entry point that starts the chain
+- `keyboards/epomaker/th40/th40.c` — keyboard-level callbacks (fixed locally)
+- `th40/default/keymap.c` — `keyboard_post_init_user()` sets RGB mode
 
 ---
 
 ### 4. Custom Keycodes & `process_record` `[~]`
 
-*Extending the processing chain*
+*The processing gauntlet and how keycodes become actions*
 
-When a keycode is processed, it flows through `process_record_*` functions. Custom keycodes let you define entirely new behaviors — macros, mode switches, custom actions.
+#### The `&&` Chain in `process_record_quantum`
 
-**Key concepts:** `process_record_user()`, custom keycode enum, tap vs hold, `SEND_STRING`, `register_code`/`unregister_code`
+After the callback chain (`process_record_kb/user`) returns `true`, the keycode passes through ~30 feature processors in a short-circuit `&&` chain. Each returns `true` ("not mine") or `false` ("consumed, stop"). Order matters — `process_record_kb` runs before tap dance, caps word, auto shift, etc. If your `_user` function returns `false`, none of those later handlers see the keycode.
+
+#### How Different Keycodes Resolve
+
+**Simple key (`KC_A`):** Nobody in the chain claims it. Falls through to `process_action()` → `register_code(KC_A)` → `add_key()` sets bit in keyboard report → `host_keyboard_send()` sends USB HID report.
+
+**Modifier + key (`S(KC_1)` = `!`):** Adds shift as a **weak mod** (temporary), sends report with shift, registers `KC_1`, then on release clears the weak mod. Strong mods (physical shift key) tracked separately in `real_mods` — they're OR'd together: `report.mods = real_mods | weak_mods | oneshot_mods`. No conflict if both active.
+
+**Layer key (`MO(2)`):** `layer_on(2)` / `layer_off(2)`. Nothing sent to host — layers are internal state.
+
+**Tap-hold (`LT(2, KC_SPC)`):** QMK can't decide immediately, so it **buffers** all subsequent key events. Decision: released within `TAPPING_TERM` (200ms) → tap (sends `KC_SPC`); term expires while held → hold (`layer_on(2)`). Buffered events flushed synchronously all at once after decision. Tuning: `PERMISSIVE_HOLD`, `HOLD_ON_OTHER_KEY_PRESS`, `CHORDAL_HOLD` change when the hold decision is made earlier for fast typists.
+
+**TH40 wireless (`MD_BLE1`):** Intercepted in `process_record_kb` → `kb_process_record_common()`. Sends SPI command to wireless MCU, persists to EEPROM. Returns `true` (should arguably return `false`, but harmless since no later processor recognizes the keycode).
+
+#### Key Functions
+
+- **`register_code(kc)`** — press and hold: set bit in HID report, send report. Key stays "down" until unregister.
+- **`unregister_code(kc)`** — release: clear bit, send updated report.
+- **`tap_code(kc)`** — register + short delay + unregister. One keypress.
+- **`SEND_STRING("text")`** — calls `tap_code()` per character.
+
+#### USB HID Reports
+
+Reports are **state snapshots**, not events: "these keys and mods are currently held." Sent every polling interval (~1ms USB). Host compares consecutive reports to detect changes. Self-healing — a lost report doesn't cause stuck keys.
+
+Report struct: modifier bitmask + up to 6 keycodes (6KRO) or a full bitmap (NKRO).
 
 **Key files:**
-- `quantum/process_keycode/` — built-in keycode processors
-- `th40/default/keymap.c` — our custom keycodes (if any)
-- `lib/rdmctmzt_common/keyboard_common.c` — custom keycodes for wireless (`MD_BLE1`, `MD_USB`, etc.)
+- `quantum/quantum.c` — `process_record_quantum()`: the `&&` chain of ~30 processors
+- `quantum/action.c` — `process_action()`: executes the resolved action, `register_code()`/`unregister_code()`
+- `quantum/action_util.c` — `send_keyboard_report()`: builds and sends HID report
+- `quantum/action_tapping.c` — tap-hold state machine for LT/MT
+- `lib/rdmctmzt_common/keyboard_common.c` — TH40 wireless keycodes (`kb_process_record_common`)
+- `lib/rdmctmzt_common/rdmctmzt_common.h` — custom keycode enum (`MD_BLE1`, `MD_USB`, etc.)
 
-**TH40 cross-reference:** The wireless mode keycodes (`MD_BLE1`, `MD_BLE2`, `MD_USB`, etc.) are custom keycodes processed in `keyboard_common.c`, not standard QMK.
-
-**Understanding questions:**
-- [ ] How does `process_record` decide the order of processing?
-- [ ] What's the difference between `tap_code()` and `register_code()`/`unregister_code()`?
-- [ ] How do TH40's wireless mode keycodes hook into the processing chain?
+**Still to explore:**
+- [ ] Individual feature processors in depth (caps_word, tap_dance, auto_shift, leader, etc.) — trace when needed
+- [ ] NKRO vs 6KRO report formats and when each is used
+- [ ] `TAPPING_TERM` tuning in practice (after adding `LT()` to the keymap)
 
 ---
 
@@ -318,4 +437,84 @@ Momentary indicators (BT channel, battery) stay lit after releasing the layer 3 
 - Topic X: [?] → [~]
 -->
 
-*(No sessions yet)*
+### Session 1 — 2026-03-06 — Matrix Scanning & Electronics Fundamentals
+**Covered:**
+- GPIO pins (input/output modes, driving, reading)
+- Voltage vs current mental models (water level analogy)
+- Floating pins, pull-up/pull-down resistors
+- MOSFET gates — why input pins draw no current
+- Full matrix scan cycle with TH40 specifics
+- Ghosting and diode function
+- `MATRIX_UNSELECT_DRIVE_HIGH` and why the Cortex-M0 needs it
+- Debounce algorithm (`asym_eager_defer_pk`)
+- QMK main loop structure — no concurrency, just `while(true)`
+
+**Clicked:**
+- Voltage as water level, not pressure — it just exists on the rails
+- Debounce as synth envelope (zero attack, longer release)
+- Pull-up: button pressed = LOW (inverted logic)
+- "Pulled" = same word for resistor (weak) and driver (strong)
+
+**Open questions:**
+- Diode semiconductor physics (low priority, curiosity)
+- `NOP_FUDGE` timing details
+
+**Resources used:**
+- [SparkFun: Pull-up Resistors](https://learn.sparkfun.com/tutorials/pull-up-resistors/all)
+- [FreeCodeCamp: Pull-down and Pull-up Resistors](https://www.freecodecamp.org/news/a-simple-explanation-of-pull-down-and-pull-up-resistors-660b308f116a/)
+- [SparkFun: Logic Levels](https://learn.sparkfun.com/tutorials/logic-levels/all)
+
+**Confidence updates:**
+- Matrix Scanning: `[?]` → `[~]`
+
+### Session 1b — 2026-03-06 — Layers & Keycodes
+**Covered:**
+- Two bitmasks: `default_layer_state` (DF) vs `layer_state` (MO/LT)
+- Top-down layer resolution with KC_TRNS fallthrough
+- MO vs LT vs DF vs OSL — when to use each
+- Source layer cache: per-key, written on press, read on release
+- Traced full resolution path: matrix position → layer lookup → keycode → action
+
+**Clicked:**
+- DF() is persistent (changes base), MO() is momentary (overlay) — different bitmasks
+- LT() = MO() + tap keycode, decided by TAPPING_TERM timeout
+- Cache prevents wrong-layer release when MO() deactivates before key release
+
+**Ideas spawned:**
+- `LT(2, KC_CAPS_WORD)` on left space — added to TODO.md
+
+**Confidence updates:**
+- Layers & Keycodes: `[~]` → `[~]` (was already surface, now solid on mechanics. Full `[✓]` after using LT/OSL in practice.)
+
+### Session 1c — 2026-03-06 — Callback Chain
+**Covered:**
+- Weak functions (`__attribute__((weak))`) — linker-time override, strong wins
+- Three-level chain: core → `_kb` (keyboard) → `_user` (keymap), explicit calls, no magic
+- `return false` to swallow keypresses (e.g. wireless keycodes handled at `_kb` level)
+- Full list of ~15 callback pairs
+- Why the th40.c `_user`/`_kb` bug exists and how our fix works
+
+**Clicked:**
+- The chain is convention, not framework — _kb must explicitly call _user
+- Weak functions chosen for simplicity (hobbyist audience) and optimization, not because they're the "right" pattern
+
+**Confidence updates:**
+- Callback Chain: `[~]` → `[✓]`
+
+### Session 1d — 2026-03-06 — Custom Keycodes & process_record
+**Covered:**
+- The ~30-processor `&&` chain in `process_record_quantum` — order, short-circuit
+- Five keycode paths traced: simple (KC_A), mod+key (S(KC_1)), layer (MO), tap-hold (LT), wireless (MD_BLE1)
+- register_code vs tap_code vs SEND_STRING
+- Weak mods vs real mods vs oneshot mods — OR'd in report, no conflict
+- USB HID reports as state snapshots (self-healing, not events)
+- Tap-hold buffering: events held until decision, flushed synchronously
+- PERMISSIVE_HOLD / HOLD_ON_OTHER_KEY_PRESS / CHORDAL_HOLD tuning
+
+**Clicked:**
+- HID reports are state-based for reliability (like game netcode)
+- Tap-hold buffering means keys resolve against the decided layer, not the layer at press time
+- The `&&` chain is just a priority list — first processor to return false wins
+
+**Confidence updates:**
+- Custom Keycodes & process_record: `[~]` → `[~]` (mechanics clear, but ~30 individual processors are a deep well to explore later)
