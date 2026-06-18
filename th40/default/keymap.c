@@ -2,6 +2,12 @@
 #include "rdmctmzt_common.h"
 #include "keyboard_common.h"
 
+const key_override_t lspace_key_override = ko_make_basic(MOD_MASK_SHIFT, MO(2), KC_SPC);
+
+const key_override_t *key_overrides[] = {
+	&lspace_key_override
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     // Layer 0: Colemak-DH base
