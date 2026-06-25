@@ -6,7 +6,6 @@ Custom QMK firmware setup for EPOMAKER TH40 keyboard.
 
 - `README.md` - setup instructions, build commands
 - `TODO.md` - outstanding tasks, known issues
-- `DECISIONS.md` - design decisions and rationale
 - `th40/default/keymap.c` - the actual keymap source (with inline comments)
 - `qmk_firmware/` - carlosedp's QMK fork (gitignored, clone separately)
 - `qmk_firmware/keyboards/epomaker/th40/readme.md` - hardware info, bootloader docs
