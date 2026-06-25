@@ -26,16 +26,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [2] = LAYOUT_tkl_ansi(
         KC_ESC,  S(KC_1), S(KC_2), S(KC_3), S(KC_4), S(KC_5), S(KC_6), S(KC_7), S(KC_8), KC_GRV,  KC_TILD, KC_SCLN,
-        KC_LCTL, KC_LBRC, KC_RBRC, KC_PIPE, KC_UNDS, KC_NO,   KC_PLUS, KC_EQL,  S(KC_9), S(KC_0),          KC_QUOT,
-        KC_LSFT, KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_BSLS, KC_MINS, KC_LT,   KC_GT,   KC_DQUO,
-        KC_NO,   KC_LALT, KC_LGUI,                   KC_NO,   KC_NO,   KC_ENT,           KC_RGUI, KC_RALT, KC_RCTL
+        KC_TRNS, KC_LBRC, KC_RBRC, KC_PIPE, KC_UNDS, KC_NO,   KC_PLUS, KC_EQL,  S(KC_9), S(KC_0),          KC_QUOT,
+        KC_TRNS, KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_BSLS, KC_MINS, KC_LT,   KC_GT,   KC_DQUO,
+        KC_TRNS, KC_TRNS, KC_TRNS,                   KC_NO,   KC_NO,   KC_ENT,           KC_TRNS, KC_TRNS, KC_TRNS
     ),
 
     [3] = LAYOUT_tkl_ansi(
-        KC_ESC,  KC_P1,   KC_P2,   KC_P3,   KC_P4,   KC_P5,   KC_P6,   KC_P7,   KC_P8,   KC_P9,   KC_P0,   KC_NO,
-        KC_LCTL, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  MD_USB,  KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT,          RM_TOGG,
-        KC_LSFT, KC_MUTE, KC_VOLD, KC_VOLU, RM_VALD, RM_VALU, RM_NEXT, LALT(KC_LEFT), LALT(KC_BSPC), LALT(KC_DEL), LALT(KC_RGHT), KC_RSFT,
-        EE_CLR,  QK_WLO,  KC_LALT,                   QK_BAT,  KC_NO,   KC_SPC,           KC_RGUI, KC_RALT, KC_NO
+        KC_ESC,  KC_P1,   KC_P2,   KC_P3,   KC_P4,   KC_P5,   KC_P6,   KC_P7,   KC_P8,   KC_P9,   KC_P0,   KC_TRNS,
+        KC_TRNS, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  MD_USB,  KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT,          RM_TOGG,
+        KC_TRNS, KC_MUTE, KC_VOLD, KC_VOLU, RM_VALD, RM_VALU, RM_NEXT, LALT(KC_LEFT), LALT(KC_BSPC), LALT(KC_DEL), LALT(KC_RGHT), KC_TRNS,
+        EE_CLR,  QK_WLO,  KC_TRNS,                   QK_BAT,  KC_NO,   KC_SPC,           KC_TRNS, KC_TRNS, KC_TRNS
     ),
 
 };
