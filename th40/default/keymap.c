@@ -39,8 +39,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
 };
-
-void keyboard_post_init_user(void) {
-    kb_keyboard_post_init();
-    rgb_matrix_mode_noeeprom(RGB_MATRIX_STARLIGHT_DUAL_HUE);
-}
+//
+// void keyboard_post_init_user(void) {
+//     kb_keyboard_post_init();
+//     rgb_matrix_mode_noeeprom(RGB_MATRIX_STARLIGHT_DUAL_HUE);
+// }
