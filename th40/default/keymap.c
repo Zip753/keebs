@@ -32,10 +32,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     [3] = LAYOUT_tkl_ansi(
-        KC_ESC,  KC_P1,   KC_P2,   KC_P3,   KC_P4,   KC_P5,   KC_P6,   KC_P7,   KC_P8,   KC_P9,   KC_P0,   KC_TRNS,
-        KC_TRNS, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  MD_USB,  KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT,          RM_TOGG,
+        KC_ESC,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,          KC_8,          KC_9,         KC_0,          KC_TRNS,
+        KC_TRNS, MD_BLE1, MD_BLE2, MD_BLE3, MD_24G,  MD_USB,  KC_LEFT, KC_DOWN,       KC_UP,         KC_RGHT,                     RM_TOGG,
         KC_TRNS, KC_MUTE, KC_VOLD, KC_VOLU, RM_VALD, RM_VALU, RM_NEXT, LALT(KC_LEFT), LALT(KC_BSPC), LALT(KC_DEL), LALT(KC_RGHT), KC_TRNS,
-        EE_CLR,  KC_TRNS, KC_TRNS,                   QK_BAT,  KC_NO,   KC_SPC,           KC_TRNS, KC_TRNS, KC_TRNS
+        EE_CLR,  KC_TRNS, KC_TRNS,                   QK_BAT,  KC_NO,   KC_SPC,                       KC_TRNS,      KC_TRNS,       KC_TRNS
     ),
 
 };
