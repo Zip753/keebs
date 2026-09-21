@@ -2,6 +2,30 @@
 #include "rdmctmzt_common.h"
 #include "keyboard_common.h"
 
+enum {
+	TD_POLISH_E,
+	TD_POLISH_A,
+	TD_POLISH_O,
+	TD_POLISH_Z,
+	TD_POLISH_X,
+	TD_POLISH_C,
+	TD_POLISH_N,
+	TD_POLISH_L,
+	TD_POLISH_S,
+};
+
+tap_dance_action_t tap_dance_actions[] = {
+	[TD_POLISH_E] = ACTION_TAP_DANCE_DOUBLE(KC_E, A(KC_E)),
+	[TD_POLISH_A] = ACTION_TAP_DANCE_DOUBLE(KC_A, A(KC_A)),
+	[TD_POLISH_O] = ACTION_TAP_DANCE_DOUBLE(KC_O, A(KC_O)),
+	[TD_POLISH_Z] = ACTION_TAP_DANCE_DOUBLE(KC_Z, A(KC_Z)),
+	[TD_POLISH_X] = ACTION_TAP_DANCE_DOUBLE(KC_X, A(KC_X)),
+	[TD_POLISH_C] = ACTION_TAP_DANCE_DOUBLE(KC_C, A(KC_C)),
+	[TD_POLISH_N] = ACTION_TAP_DANCE_DOUBLE(KC_N, A(KC_N)),
+	[TD_POLISH_L] = ACTION_TAP_DANCE_DOUBLE(KC_L, A(KC_L)),
+	[TD_POLISH_S] = ACTION_TAP_DANCE_DOUBLE(KC_S, A(KC_S)),
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [0] = LAYOUT_tkl_ansi(
@@ -12,10 +36,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     [1] = LAYOUT_tkl_ansi(
-        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, 
-        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,          KC_TRNS,
-        KC_LSFT, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_SLSH, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_RSFT,
-        KC_TRNS, KC_TRNS, KC_TRNS,                   KC_TRNS, KC_TRNS, KC_TRNS,          KC_TRNS, KC_TRNS, DF(0)
+        KC_TRNS, KC_TRNS,         KC_TRNS,         KC_TRNS,         KC_TRNS, KC_TRNS, KC_TRNS, TD(TD_POLISH_L), KC_TRNS,         KC_TRNS, KC_TRNS, KC_TRNS,
+        KC_TRNS, TD(TD_POLISH_A), KC_TRNS,         TD(TD_POLISH_S), KC_TRNS, KC_TRNS, KC_TRNS, TD(TD_POLISH_N), TD(TD_POLISH_E), KC_TRNS,          TD(TD_POLISH_O),
+        KC_TRNS, TD(TD_POLISH_Z), TD(TD_POLISH_X), TD(TD_POLISH_C), KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,         KC_TRNS,         KC_TRNS, KC_TRNS, KC_TRNS,
+        KC_TRNS, KC_TRNS,         KC_TRNS,                                   KC_TRNS, KC_TRNS, KC_TRNS,                          KC_TRNS, KC_TRNS, DF(0)
     ),
 
     [2] = LAYOUT_tkl_ansi(
